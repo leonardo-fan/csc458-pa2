@@ -210,7 +210,7 @@ def bufferbloat():
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
     with open('%s/avg_and_sd.txt' % (args.dir), 'w') as f:
-        f.write("ave=%lf\nstd_dev=%lf\n" % (avg(time_values), stdev(time_values)))
+        f.write("ave=%lf\nstd_dev=%lf\n" % (mean(time_values), stdev(time_values)))
 
     stop_tcpprobe()
     if qmon is not None:

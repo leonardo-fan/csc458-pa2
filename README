@@ -2,15 +2,23 @@
 
 ## Set-up
 1. Open mininet vm through guide here: http://www.cs.toronto.edu/~abbasloo/teaching/csc458/vmsetup.html.
-2. Run ```sudo ./run.sh``` in terminal
-3. Input password ```csc458```
+2. Run ```sudo ./run.sh``` in terminal.
+3. Input password ```csc458``` if prompted.
+4. View results in ```bb-q20``` and ```bb-q100``` folder.
 
 ## Questions
 
-1. Why do you see a difference in webpage fetch times with small and large router buffers?
+***1. Why do you see a difference in webpage fetch times with small and large router buffers?***
 
-2. Bufferbloat can occur in other places such as your network interface card (NIC). Check the output of ifconfig eth0 on your VirtualBox VM. What is the (maximum) transmit queue length on the network interface reported by ifconfig? For this queue size and a draining rate of 100 Mbps, what is the maximum time a packet might wait in the queue before it leaves the NIC?
+The average fetch time for a small queue size of 20 was 0.608289s while the average fetch time for a large queue size of 100 was 1.272861s. This increased delay is due to more apparent bufferbloat. A larger queue means more packets can be held and stuck in the buffer, making the queue take longer to fill which delays packet loss (which would make the sender decrease their CWND) more than a smaller queue would. Hence, this larger fetch time for the larger queue can be correlated to the buffer size due to bufferbloat. 
 
-3. How does the RTT reported by ping vary with the queue size? Write a symbolic equation to describe the relation between the two (ignore computation overheads in ping that might affect the final result).
+***2. Bufferbloat can occur in other places such as your network interface card (NIC). Check the output of ifconfig eth0 on your VirtualBox VM. What is the (maximum) transmit queue length on the network interface reported by ifconfig? For this queue size and a draining rate of 100 Mbps, what is the maximum time a packet might wait in the queue before it leaves the NIC?***
 
-4. Identify and describe two ways to mitigate the bufferbloat problem.
+Running ```ifconfig eth0``` on VirtualBox VM showed a transmit queue length of 1000.
+
+The maximum size of a packet that can go through ```eth0``` is 1500. Hence, the maximum time a packet might wait will be (1000 queuelen * 1500 bytes * 8 bits) / (100 000 000 bits/s) = 0.12s.
+
+***3. How does the RTT reported by ping vary with the queue size? Write a symbolic equation to describe the relation between the two (ignore computation overheads in ping that might affect the final result).***
+- trough is at 10ms and 100ms for the rtt graphs
+
+***4. Identify and describe two ways to mitigate the bufferbloat problem.***

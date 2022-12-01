@@ -81,6 +81,13 @@ class BBTopo(Topo):
         switch = self.addSwitch('s0')
 
         # TODO: Add links with appropriate characteristics
+        for i in range(0, n):
+            if i == 0:
+                # make first the link with 1Gbps
+                self.addLink(hosts[i], switch, bw=args.bw_host, delay=args.delay, max_queue_size=args.maxq)
+            else:
+                # make next the bottleneck link
+                self.addLink(hosts[i], switch, bw=args.bw_net, delay=args.delay, max_queue_size=args.maxq)
 
 # Simple wrappers around monitoring utilities.  You are welcome to
 # contribute neatly written (using classes) monitoring scripts for
@@ -111,6 +118,8 @@ def start_iperf(net):
     server = h2.popen("iperf -s -w 16m")
     # TODO: Start the iperf client on h1.  Ensure that you create a
     # long lived TCP flow. You may need to redirect iperf's stdout to avoid blocking.
+    h1 = net.get('h1')
+    h1.popen("iperf -c %s -t %s > %s/iperf.out" % (h2.IP(), args.time, args.dir), shell=True)
 
 def start_webserver(net):
     h1 = net.get('h1')
@@ -130,7 +139,8 @@ def start_ping(net):
     # until stdout is read. You can avoid this by runnning popen.communicate() or
     # redirecting stdout
     h1 = net.get('h1')
-    popen = h1.popen("echo '' > %s/ping.txt"%(args.dir), shell=True)
+    h2 = net.get('h2')
+    h1.popen("ping -i 0.1 %s > %s/ping.txt" % (h2.IP(), args.dir), shell=True)
 
 def bufferbloat():
     if not os.path.exists(args.dir):
@@ -159,12 +169,11 @@ def bufferbloat():
     # Depending on the order you add links to your network, this
     # number may be 1 or 2.  Ensure you use the correct number.
     #
-    # qmon = start_qmon(iface='s0-eth2',
-    #                  outfile='%s/q.txt' % (args.dir))
-    qmon = None
+    qmon = start_qmon(iface='s0-eth2', outfile='%s/q.txt' % (args.dir))
 
     # TODO: Start iperf, webservers, etc.
-    # start_iperf(net)
+    start_iperf(net)
+    start_webserver(net)
 
     # Hint: The command below invokes a CLI which you can use to
     # debug.  It allows you to run arbitrary commands inside your
@@ -180,6 +189,7 @@ def bufferbloat():
     # Hint: have a separate function to do this and you may find the
     # loop below useful.
     start_time = time()
+    time_values = []
     while True:
         # do the measurement (say) 3 times.
         sleep(1)
@@ -189,9 +199,18 @@ def bufferbloat():
             break
         print "%.1fs left..." % (args.time - delta)
 
+        h1 = net.get('h1')
+        h2 = net.get('h2')
+        for _ in range(3):
+            # h1 is the webserver hence use its ip
+            time_values.append(float(h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP()).communicate()[0]))
+        sleep(4)
+
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
+    with open('%s/avg_and_sd.txt' % (args.dir), 'w') as f:
+        f.write("ave=%lf\nstd_dev=%lf\n" % (avg(time_values), stdev(time_values)))
 
     stop_tcpprobe()
     if qmon is not None:

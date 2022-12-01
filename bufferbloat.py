@@ -192,6 +192,7 @@ def bufferbloat():
     time_values = []
     while True:
         # do the measurement (say) 3 times.
+        sleep(5)
         now = time()
         delta = now - start_time
         if delta > args.time:
@@ -203,7 +204,6 @@ def bufferbloat():
         for _ in range(3):
             # h1 is the webserver hence use its ip
             time_values.append(float(h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP()).communicate()[0]))
-        sleep(5)
 
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your

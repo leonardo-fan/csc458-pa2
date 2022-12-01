@@ -14,8 +14,8 @@ from subprocess import Popen, PIPE
 from time import sleep, time
 from multiprocessing import Process
 from argparse import ArgumentParser
-
 from monitor import monitor_qlen
+from helper import avg, stdev
 import termcolor as T
 
 import sys
@@ -192,7 +192,6 @@ def bufferbloat():
     time_values = []
     while True:
         # do the measurement (say) 3 times.
-        sleep(1)
         now = time()
         delta = now - start_time
         if delta > args.time:
@@ -204,13 +203,13 @@ def bufferbloat():
         for _ in range(3):
             # h1 is the webserver hence use its ip
             time_values.append(float(h2.popen('curl -o /dev/null -s -w %%{time_total} %s/http/index.html' % h1.IP()).communicate()[0]))
-        sleep(4)
+        sleep(5)
 
     # TODO: compute average (and standard deviation) of the fetch
     # times.  You don't need to plot them.  Just note it in your
     # README and explain.
     with open('%s/avg_and_sd.txt' % (args.dir), 'w') as f:
-        f.write("ave=%lf\nstd_dev=%lf\n" % (mean(time_values), stdev(time_values)))
+        f.write("ave=%lf\nstd_dev=%lf\n" % (avg(time_values), stdev(time_values)))
 
     stop_tcpprobe()
     if qmon is not None:

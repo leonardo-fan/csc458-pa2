@@ -10,7 +10,7 @@
 
 ***1. Why do you see a difference in webpage fetch times with small and large router buffers?***
 
-The average fetch time for a small queue size of 20 was 0.608289s while the average fetch time for a large queue size of 100 was 1.272861s. This increased delay is due to more apparent bufferbloat. A larger queue means more packets can be held and stuck in the buffer, making the queue take longer to fill which delays packet loss (which would make the sender decrease their CWND) more than a smaller queue would. Hence, this larger fetch time for the larger queue can be correlated to the buffer size due to bufferbloat. 
+The average fetch time for a small queue size of 20 was 0.608289s while the average fetch time for a large queue size of 100 was 1.272861s. This increased delay is due to more apparent bufferbloat. A larger queue means more packets can be held and stuck in the buffer, and since buffers will need to process all these packets in fifo order (added queueing delay), the time taken overall would be more than a smaller queue. Moreover, the packet drop from a full queue will take longer for a larger queue to tell the sender to reduce their CWND and reduce the amount of packets sent (that will be delayed waiting in the queue). Hence, this larger fetch time for the larger queue can be correlated to the buffer size due to bufferbloat. 
 
 ***2. Bufferbloat can occur in other places such as your network interface card (NIC). Check the output of ifconfig eth0 on your VirtualBox VM. What is the (maximum) transmit queue length on the network interface reported by ifconfig? For this queue size and a draining rate of 100 Mbps, what is the maximum time a packet might wait in the queue before it leaves the NIC?***
 
@@ -19,6 +19,11 @@ Running ```ifconfig eth0``` on VirtualBox VM showed a transmit queue length of 1
 The maximum size of a packet that can go through ```eth0``` is 1500. Hence, the maximum time a packet might wait will be (1000 queuelen * 1500 bytes * 8 bits) / (100 000 000 bits/s) = 0.12s.
 
 ***3. How does the RTT reported by ping vary with the queue size? Write a symbolic equation to describe the relation between the two (ignore computation overheads in ping that might affect the final result).***
-- trough is at 10ms and 100ms for the rtt graphs
+
+The RTT increases proportionally with the queue size, for a queue size of 20, the average lowest was ~10ms and ~100ms for the queue size of 100. Using these examples, a symbolic equation could be RTT = Queue Size * k, where k is some variable that varies with queue size. k = 0.5 for queue size of 20 and k = 1 for queue size of 100.
 
 ***4. Identify and describe two ways to mitigate the bufferbloat problem.***
+
+Decrease the maximum buffer size (queue size). As discussed above this will minimize the amount of packets allowed in a buffer that introduces queueing and packet loss delays.
+
+Active Queue Management algorithms can also be used. One such example is CoDel that sets limits on the delay packets can experience as they pass through buffers. If the delay rises more than specific value e.g. >5ms, packets are dropped from the queue until the delay drops below the chosen maximum level. This will ensure that the CWND doesn't get too large and packets aren't sent out too quickly that causes larger RTTs.
